@@ -78,7 +78,16 @@ class Item extends REST_Controller
     	$id = $this->delete('id');
     	
     	$this->db->where('id', $id);
-    	$this->db->delete('items');
+    	$result = $this->db->delete('items');
+    	
+    	if($result !== false){
+        	// success
+        	$this->response('success', 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
     }
 	
 	// Item getItem(Integer itemId)
@@ -134,13 +143,14 @@ class Item extends REST_Controller
     // get all the items
     function all_get()
     {
+    	$this->db->order_by('id');
         $result = $this->db->get('items');
     
     	if($result !== false){
         	// success
         	$all = array();
 	    	foreach ($result->result_array() as $row){
-			   $all[] = $result->row_array();
+			   $all[] = $row;
 			}
 			$this->response($all, 200); // 200 being the HTTP response code
         	

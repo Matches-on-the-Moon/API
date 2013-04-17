@@ -214,7 +214,16 @@ class Account extends REST_Controller
 		$id = $this->delete('id');
     	
     	$this->db->where('id', $id);
-    	$this->db->delete('accounts');
+    	$result = $this->db->delete('accounts');
+    	
+    	if($result !== false){
+        	// success
+        	$this->response('success', 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
 	}
 
 	// boolean editAccountPassword(Integer accountID, String password);

@@ -18,10 +18,49 @@ require APPPATH.'/libraries/REST_Controller.php';
 
 class Account extends REST_Controller
 {
-	function user_get()
+	/*
+		
+		boolean createAccount(String loginName, String password, String name, String email) throws FMSException;
+		
+		Account attemptLogin(String loginName, String password);
+		
+		Account getAccount(Integer accountID);
+		
+		Account.State getAccountStateByLoginName(String loginName);
+		
+		boolean lockAccount(Integer accountID);
+		
+		boolean unlockAccount(Integer accountID);
+		
+		boolean deleteAccount(Integer accountID);
+		
+		boolean editAccountPassword(Integer accountID, String password);
+		
+		boolean editAccountEmail(Integer accountID, String email);
+		
+		boolean isLoginNameUnique(String loginName);
+		
+		int getAccountIdByLoginName(String text);
+		
+		boolean isAdmin(Integer accountID);
+		
+		List<Account> getAllAccounts();
+		
+		boolean promoteAccount(Integer targetAccountID);
+		
+		== account ==
+		Integer id;
+	    String name;
+	    String loginName;
+	    String password;
+	    State accountState;
+	    String email;
+	    int loginAttempts;
+	
+	*/
+	
+	function index_get()
     {
-    	$this->db->get('items');
-    
         if(!$this->get('id'))
         {
         	$this->response(NULL, 400);
@@ -47,7 +86,8 @@ class Account extends REST_Controller
         }
     }
     
-    function user_post()
+    // update
+    function index_post()
     {
         //$this->some_model->updateUser( $this->get('id') );
         $message = array('id' => $this->get('id'), 'name' => $this->post('name'), 'email' => $this->post('email'), 'message' => 'ADDED!');
@@ -55,7 +95,13 @@ class Account extends REST_Controller
         $this->response($message, 200); // 200 being the HTTP response code
     }
     
-    function user_delete()
+    // create
+    function index_put()
+    {
+    
+    }
+    
+    function index_delete()
     {
     	//$this->some_model->deletesomething( $this->get('id') );
         $message = array('id' => $this->get('id'), 'message' => 'DELETED!');
@@ -63,7 +109,7 @@ class Account extends REST_Controller
         $this->response($message, 200); // 200 being the HTTP response code
     }
     
-    function users_get()
+    function accounts_get()
     {
         //$users = $this->some_model->getSomething( $this->get('limit') );
         $users = array(

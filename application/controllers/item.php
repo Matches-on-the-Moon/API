@@ -19,8 +19,6 @@ require APPPATH.'/libraries/REST_Controller.php';
 class Item extends REST_Controller
 {
 	/*
-		ItemManager interface
-		
 		public Integer createItem(Integer ownerID, String name, String location, String reward, Item.Type type, String category, String description)
 	            throws Exception;
 	    
@@ -33,91 +31,148 @@ class Item extends REST_Controller
 		public Item getItem(Integer itemId);
 	
 		public ArrayList<Item> getMatches(Item item);
+		
+		== Item ==
+		Integer id;
+		Integer ownerID; 
+		Calendar calendar;
+		String name;
+		String location;
+		Status status;
+		String reward;
+		Type type;
+		String category;
+		String description;
 	*/
 	
 	// Integer createItem(Integer ownerID, String name, String location, String reward, Item.Type type, String category, String description)
 	// create an item and return it's item id
-	function item_post()
+	function index_put()
     {
-    	(int)$this->post('ownerID');
-    	$this->post('name');
-    	$this->post('location');
-    	$this->post('reward');
-    	$this->post('type');
-    	$this->post('category');
-    	$this->post('description');
+    	$data = array(
+    		'ownerID' 	  => $this->put('ownerID'),
+    		'name'		  => $this->put('name'),
+    		'location'	  => $this->put('location'),
+    		'reward' 	  => $this->put('reward'),
+    		'type'  	  => $this->put('type'),
+    		'category'    => $this->put('category'),
+    		'description' => $this->put('description')
+    	);
     	
-        //$this->some_model->updateUser( $this->get('id') );
-        $message = array('id' => $this->get('id'), 'name' => $this->post('name'), 'email' => $this->post('email'), 'message' => 'ADDED!');
-        
-        $this->response($message, 200); // 200 being the HTTP response code
+    	$result = $this->db->insert('items', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
     }
     
     // void deleteItem(Integer itemID)
     // delete an item given it's id
-    function item_delete()
+    function index_delete()
     {
-    	//$this->some_model->deletesomething( $this->get('id') );
-        $message = array('id' => $this->get('id'), 'message' => 'DELETED!');
-        
-        $this->response($message, 200); // 200 being the HTTP response code
+    	$id = $this->delete('id');
+    	
+    	$this->db->where('id', $id);
+    	$this->db->delete('items');
     }
 	
 	// Item getItem(Integer itemId)
 	// get a single item given it's id
-	function item_get()
+	function index_get()
     {
-        if(!$this->get('id'))
-        {
-        	$this->response(NULL, 400);
-        }
-
-        // $user = $this->some_model->getSomething( $this->get('id') );
-    	$users = array(
-			1 => array('id' => 1, 'name' => 'Some Guy', 'email' => 'example1@example.com', 'fact' => 'Loves swimming'),
-			2 => array('id' => 2, 'name' => 'Person Face', 'email' => 'example2@example.com', 'fact' => 'Has a huge face'),
-			3 => array('id' => 3, 'name' => 'Scotty', 'email' => 'example3@example.com', 'fact' => 'Is a Scott!', array('hobbies' => array('fartings', 'bikes'))),
-		);
-		
-    	$user = @$users[$this->get('id')];
+    	$id = $this->get('id');
+       	
+    	$this->db->where('id', $id);
+    	$result = $this->db->get('items');
+    
+        if($result !== false){
+        	// success
+        	$row = $result->row_array();
+        	$this->response($row, 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+    }
+    
+    // boolean editItem(Integer itemId, String itemName, String itemLocation, String itemReward, String itemCategory, String itemDescription);
+    // update an item
+    function index_post()
+    {
+    	$id = $this->post('id');
+    
+    	$data = array(
+    		'ownerID' 	  => $this->post('ownerID'),
+    		'name'		  => $this->post('name'),
+    		'location'	  => $this->post('location'),
+    		'reward' 	  => $this->post('reward'),
+    		'type'  	  => $this->post('type'),
+    		'category'    => $this->post('category'),
+    		'description' => $this->post('description')
+    	);
     	
-        if($user)
-        {
-            $this->response($user, 200); // 200 being the HTTP response code
-        }
-
-        else
-        {
-            $this->response(array('error' => 'User could not be found'), 404);
-        }
+    	$this->db->where('id', $id);
+    	$result = $this->db->update('items', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
     }
     
     // ArrayList<Item> getAllItems()
     // get all the items
-    function items_get()
+    function all_get()
     {
-        //$users = $this->some_model->getSomething( $this->get('limit') );
-        $users = array(
-			array('id' => 1, 'name' => 'Some Guy', 'email' => 'example1@example.com'),
-			array('id' => 2, 'name' => 'Person Face', 'email' => 'example2@example.com'),
-			3 => array('id' => 3, 'name' => 'Scotty', 'email' => 'example3@example.com', 'fact' => array('hobbies' => array('fartings', 'bikes'))),
-		);
-        
-        if($users)
-        {
-            $this->response($users, 200); // 200 being the HTTP response code
-        }
-
-        else
-        {
-            $this->response(array('error' => 'Couldn\'t find any users!'), 404);
-        }
+        $result = $this->db->get('items');
+    
+    	if($result !== false){
+        	// success
+        	$all = array();
+	    	foreach ($result->result_array() as $row){
+			   $all[] = $result->row_array();
+			}
+			$this->response($all, 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
     }
     
     // ArrayList<Item> getMatches(Item item)
     // get all itme matching this item
     function matches_get()
     {
+    	$name = $this->get('name');
+    	$location = $this->get('location');
     
+    	$this->db->like('LOWER(name)', strtolower($name));
+    	$this->db->like('LOWER(location)', strtolower($location));
+    	$this->db->limit(100);// just in case
+    	$result = $this->db->get('items');
+    
+    	if($result !== false){
+        	// success
+        	$all = array();
+	    	foreach ($result->result_array() as $row){
+			   $all[] = $result->row_array();
+			}
+			$this->response($all, 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
     }
 }

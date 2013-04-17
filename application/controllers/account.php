@@ -59,85 +59,308 @@ class Account extends REST_Controller
 	
 	*/
 	
-	function index_get()
-    {
-        if(!$this->get('id'))
-        {
-        	$this->response(NULL, 400);
-        }
-
-        // $user = $this->some_model->getSomething( $this->get('id') );
-    	$users = array(
-			1 => array('id' => 1, 'name' => 'Some Guy', 'email' => 'example1@example.com', 'fact' => 'Loves swimming'),
-			2 => array('id' => 2, 'name' => 'Person Face', 'email' => 'example2@example.com', 'fact' => 'Has a huge face'),
-			3 => array('id' => 3, 'name' => 'Scotty', 'email' => 'example3@example.com', 'fact' => 'Is a Scott!', array('hobbies' => array('fartings', 'bikes'))),
-		);
-		
-    	$user = @$users[$this->get('id')];
+	const ACCOUNT_STATE_LOCKED = 'LOCKED';
+	const ACCOUNT_STATE_UNLOCKED = 'UNLOCKED';
+	
+	// boolean createAccount(String loginName, String password, String name, String email) throws FMSException;
+	function index_put()
+	{
+		$data = array(
+    		'loginName' => $this->put('loginName'),
+    		'password'	=> $this->put('password'),
+    		'name'	  	=> $this->put('name'),
+    		'email' 	=> $this->put('email')
+    	);
     	
-        if($user)
-        {
-            $this->response($user, 200); // 200 being the HTTP response code
-        }
-
-        else
-        {
-            $this->response(array('error' => 'User could not be found'), 404);
-        }
-    }
-    
-    // update
-    function index_post()
-    {
-        //$this->some_model->updateUser( $this->get('id') );
-        $message = array('id' => $this->get('id'), 'name' => $this->post('name'), 'email' => $this->post('email'), 'message' => 'ADDED!');
-        
-        $this->response($message, 200); // 200 being the HTTP response code
-    }
-    
-    // create
-    function index_put()
-    {
-    
-    }
-    
-    function index_delete()
-    {
-    	//$this->some_model->deletesomething( $this->get('id') );
-        $message = array('id' => $this->get('id'), 'message' => 'DELETED!');
-        
-        $this->response($message, 200); // 200 being the HTTP response code
-    }
-    
-    function accounts_get()
-    {
-        //$users = $this->some_model->getSomething( $this->get('limit') );
-        $users = array(
-			array('id' => 1, 'name' => 'Some Guy', 'email' => 'example1@example.com'),
-			array('id' => 2, 'name' => 'Person Face', 'email' => 'example2@example.com'),
-			3 => array('id' => 3, 'name' => 'Scotty', 'email' => 'example3@example.com', 'fact' => array('hobbies' => array('fartings', 'bikes'))),
-		);
-        
-        if($users)
-        {
-            $this->response($users, 200); // 200 being the HTTP response code
-        }
-
-        else
-        {
-            $this->response(array('error' => 'Couldn\'t find any users!'), 404);
-        }
-    }
-
-
-	public function send_post()
+    	$result = $this->db->insert('accounts', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+	
+	// Account attemptLogin(String loginName, String password);
+	function attempLogin_get()
 	{
-		var_dump($this->request->body);
+		$loginName = $this->get('loginName');
+		$password = $this->get('password');
+	
+		$this->db->where('loginName', $loginName);
+		$this->db->get('accounts');
+		
+		if($result !== false){
+        	// success
+        	$row = $result->row_array();
+        	if($result->num_rows() == 1){
+        		// found a user, check password
+        		if($row['password'] == $password){
+        			// correct password
+        			$this->response($row, 200);
+        			
+        		} else {
+					// wrong password        	
+	        		// increase login attempt
+	        		$attempts = $row['loginAttempts'] + 1;
+	        		$this->db->set('loginAttempts', $attempts);
+	        		
+	        		// if >= 3, then lock account
+	        		if($attempts >= 3){
+	        			$this->db->set('accountState', ACCOUNT_STATE_LOCKED);
+	        		}
+	        		
+	        		$this->db->where('loginName', $this->get('loginName'));
+					$this->db->where('password',  $this->get('password'));
+	        		$this->db->update('accounts');
+	        		
+	        		// return empty row
+	        		$this->response(array(), 200);
+        		}
+        	}
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
 	}
 
-
-	public function send_put()
+	// Account getAccount(Integer accountID);
+	function index_get()
 	{
-		var_dump($this->put('foo'));
+		$id = $this->get('id');
+       	
+    	$this->db->where('id', $id);
+    	$result = $this->db->get('accounts');
+    
+        if($result !== false){
+        	// success
+        	$row = $result->row_array();
+        	$this->response($row, 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
 	}
+
+	// Account.State getAccountStateByLoginName(String loginName);
+	function stateForLoginName_get()
+	{
+		$loginName = $this->get('loginName');
+       	
+    	$this->db->where('loginName', $loginName);
+    	$result = $this->db->get('accounts');
+    
+        if($result !== false){
+        	// success
+        	$row = $result->row_array();
+        	$state = ACCOUNT_STATE_UNLOCKED;// default
+        	if(isset($row['accountState'])){
+        		$state = $row['accountState'];
+        	}
+        	$this->response($state, 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// boolean lockAccount(Integer accountID);
+	function lock_post()
+	{
+		$id = $this->post('id');
+		
+    	$this->db->set('accountState', ACCOUNT_STATE_LOCKED);
+    	$this->db->where('id', $id);
+    	$result = $this->db->update('accounts', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// boolean unlockAccount(Integer accountID);
+	function unlock_post()
+	{
+		$id = $this->post('id');
+		
+    	$this->db->set('accountState', ACCOUNT_STATE_UNLOCKED);
+    	$this->db->where('id', $id);
+    	$result = $this->db->update('accounts', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// boolean deleteAccount(Integer accountID);
+	function index_delete()
+	{
+		$id = $this->delete('id');
+    	
+    	$this->db->where('id', $id);
+    	$this->db->delete('accounts');
+	}
+
+	// boolean editAccountPassword(Integer accountID, String password);
+	function editPassword_post()
+	{
+		$id = $this->post('id');
+		$password = $this->post('password');
+		
+    	$this->db->set('password', $password);
+    	$this->db->where('id', $id);
+    	$result = $this->db->update('accounts', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// boolean editAccountEmail(Integer accountID, String email);
+	function editEmail_post()
+	{
+		$id = $this->post('id');
+		$email = $this->post('email');
+		
+    	$this->db->set('email', $email);
+    	$this->db->where('id', $id);
+    	$result = $this->db->update('accounts', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// boolean isLoginNameUnique(String loginName);
+	function isLoginNameUnique_get()
+	{
+		$loginName = $this->get('loginName');
+		
+		$this->db->where('loginName', $loginName);
+		$result = $this->db->get('accounts');
+    
+    	if($result !== false){
+        	// success
+        	$unique = 'no';
+        	if($result->num_rows() == 0){
+        		$unique = 'yes';
+        	}
+			$this->response(array('unique' => $unique), 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// int getAccountIdByLoginName(String text);
+	function idByLoginName_get()
+	{
+		$loginName = $this->get('loginName');
+       	
+    	$this->db->where('loginName', $loginName);
+    	$result = $this->db->get('accounts');
+    
+        if($result !== false){
+        	// success
+        	$row = $result->row_array();
+        	$id = 0;// default
+        	if(isset($row['id'])){
+        		$id = $row['id'];
+        	}
+        	$this->response($id, 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// boolean isAdmin(Integer accountID);
+	function isAdmin_get()
+	{
+		$id = $this->get('id');
+       	
+    	$this->db->where('id', $id);
+    	$result = $this->db->get('accounts');
+    
+        if($result !== false){
+        	// success
+        	$row = $result->row_array();
+        	$isAdmin = 'no';
+        	if(isset($row['isAdmin']) && $row['isAdmin'] == true){
+        		$isAdmin = 'yes';
+        	}
+        	$this->response(array('isAdmin' => $isAdmin), 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// List<Account> getAllAccounts();	
+	function all_get()
+	{
+		$result = $this->db->get('accounts');
+    
+    	if($result !== false){
+        	// success
+        	$all = array();
+	    	foreach ($result->result_array() as $row){
+			   $all[] = $result->row_array();
+			}
+			$this->response($all, 200); // 200 being the HTTP response code
+        	
+        } else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
+	// boolean promoteAccount(Integer targetAccountID);
+	function promote_post()
+	{
+		$id = $this->post('id');
+		
+    	$this->db->set('isAdmin', true);
+    	$this->db->where('id', $id);
+    	$result = $this->db->update('accounts', $data);
+    	
+    	if($result){
+    		// success
+    		$this->response('success', 200);
+    		
+    	} else {
+    		// failure
+    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    	}
+	}
+
 }

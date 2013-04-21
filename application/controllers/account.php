@@ -85,18 +85,20 @@ class Account extends REST_Controller
 	}
 	
 	// Account attemptLogin(String loginName, String password);
-	function attempLogin_get()
+	function attemptLogin_get()
 	{
 		$loginName = $this->get('loginName');
 		$password = $this->get('password');
 	
 		$this->db->where('loginName', $loginName);
-		$this->db->get('accounts');
+		$result = $this->db->get('accounts');
 		
 		if($result !== false){
-        	// success
+        	// valid loginName
         	$row = $result->row_array();
-        	if($result->num_rows() == 1){
+        	// allow mutiple rows, in a real application you would NEVER do this
+        	// but for this app, we don't check this rare error, but we don't create accounts if the loginName already exists 
+        	if($result->num_rows() >= 1){
         		// found a user, check password
         		if($row['password'] == $password){
         			// correct password
@@ -110,16 +112,17 @@ class Account extends REST_Controller
 	        		
 	        		// if >= 3, then lock account
 	        		if($attempts >= 3){
-	        			$this->db->set('accountState', ACCOUNT_STATE_LOCKED);
+	        			$this->db->set('accountState', self::ACCOUNT_STATE_LOCKED);
 	        		}
 	        		
 	        		$this->db->where('loginName', $this->get('loginName'));
-					$this->db->where('password',  $this->get('password'));
 	        		$this->db->update('accounts');
 	        		
 	        		// return empty row
-	        		$this->response(array(), 200);
+	        		$this->response(array('error'=>'wrong password'), 200);
         		}
+        	} else {
+        		$this->response(array('error'=>'multiple rows found!'), 404);
         	}
         	
         } else {
@@ -158,7 +161,7 @@ class Account extends REST_Controller
         if($result !== false){
         	// success
         	$row = $result->row_array();
-        	$state = ACCOUNT_STATE_UNLOCKED;// default
+        	$state = self::ACCOUNT_STATE_UNLOCKED;// default
         	if(isset($row['accountState'])){
         		$state = $row['accountState'];
         	}
@@ -175,9 +178,9 @@ class Account extends REST_Controller
 	{
 		$id = $this->post('id');
 		
-    	$this->db->set('accountState', ACCOUNT_STATE_LOCKED);
+    	$this->db->set('accountState', self::ACCOUNT_STATE_LOCKED);
     	$this->db->where('id', $id);
-    	$result = $this->db->update('accounts', $data);
+    	$result = $this->db->update('accounts');
     	
     	if($result){
     		// success
@@ -194,9 +197,9 @@ class Account extends REST_Controller
 	{
 		$id = $this->post('id');
 		
-    	$this->db->set('accountState', ACCOUNT_STATE_UNLOCKED);
+    	$this->db->set('accountState', self::ACCOUNT_STATE_UNLOCKED);
     	$this->db->where('id', $id);
-    	$result = $this->db->update('accounts', $data);
+    	$result = $this->db->update('accounts');
     	
     	if($result){
     		// success
@@ -234,7 +237,7 @@ class Account extends REST_Controller
 		
     	$this->db->set('password', $password);
     	$this->db->where('id', $id);
-    	$result = $this->db->update('accounts', $data);
+    	$result = $this->db->update('accounts');
     	
     	if($result){
     		// success
@@ -254,7 +257,7 @@ class Account extends REST_Controller
 		
     	$this->db->set('email', $email);
     	$this->db->where('id', $id);
-    	$result = $this->db->update('accounts', $data);
+    	$result = $this->db->update('accounts');
     	
     	if($result){
     		// success
@@ -360,7 +363,7 @@ class Account extends REST_Controller
 		
     	$this->db->set('isAdmin', true);
     	$this->db->where('id', $id);
-    	$result = $this->db->update('accounts', $data);
+    	$result = $this->db->update('accounts');
     	
     	if($result){
     		// success

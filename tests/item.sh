@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#url='http://www.gtpkt.org/cs2340api'
 url='cs2340api'
 
 echo Base URL: $url

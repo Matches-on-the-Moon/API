@@ -63,11 +63,11 @@ class Item extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('item created');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
     }
     
@@ -82,11 +82,11 @@ class Item extends REST_Controller
     	
     	if($result !== false){
         	// success
-        	$this->response('success', 200); // 200 being the HTTP response code
+        	$this->response_success('item deleted'); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
     }
 	
@@ -102,11 +102,11 @@ class Item extends REST_Controller
         if($result !== false){
         	// success
         	$row = $result->row_array();
-        	$this->response($row, 200); // 200 being the HTTP response code
+        	$this->response_success($row); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
     }
     
@@ -131,11 +131,11 @@ class Item extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('item edited');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
     }
     
@@ -152,11 +152,11 @@ class Item extends REST_Controller
 	    	foreach ($result->result_array() as $row){
 			   $all[] = $row;
 			}
-			$this->response($all, 200); // 200 being the HTTP response code
+			$this->response_success($all); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
     }
     
@@ -178,11 +178,31 @@ class Item extends REST_Controller
 	    	foreach ($result->result_array() as $row){
 			   $all[] = $result->row_array();
 			}
-			$this->response($all, 200); // 200 being the HTTP response code
+			$this->response_success($all); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
     }
+    
+    function response_success($message)
+	{
+		$data = array(
+			'success' => true,
+			'error'   => false,
+			'result' => $message
+		);
+		$this->response($data, 200);
+	}
+	
+	function response_error($message)
+	{
+		$data = array(
+			'success' => false,
+			'error'   => true,
+			'result' => $message
+		);
+		$this->response($data, 404);
+	}
 }

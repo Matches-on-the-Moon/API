@@ -66,21 +66,23 @@ class Account extends REST_Controller
 	function index_put()
 	{
 		$data = array(
-    		'loginName' => $this->put('loginName'),
-    		'password'	=> $this->put('password'),
-    		'name'	  	=> $this->put('name'),
-    		'email' 	=> $this->put('email')
+    		'loginName'     => $this->put('loginName'),
+    		'password'	    => $this->put('password'),
+    		'name'	  	    => $this->put('name'),
+    		'email' 	    => $this->put('email'),
+    		'accountState'  => self::ACCOUNT_STATE_UNLOCKED,
+    		'loginAttempts' => 0
     	);
     	
     	$result = $this->db->insert('accounts', $data);
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('account created');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 	
@@ -102,7 +104,7 @@ class Account extends REST_Controller
         		// found a user, check password
         		if($row['password'] == $password){
         			// correct password
-        			$this->response($row, 200);
+        			$this->response_success($row);
         			
         		} else {
 					// wrong password        	
@@ -119,15 +121,15 @@ class Account extends REST_Controller
 	        		$this->db->update('accounts');
 	        		
 	        		// return empty row
-	        		$this->response(array('error'=>'wrong password'), 200);
+	        		$this->response_error('wrong password');
         		}
         	} else {
-        		$this->response(array('error'=>'multiple rows found!'), 404);
+	        	$this->response_error('multiple rows found!');
         	}
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -142,11 +144,11 @@ class Account extends REST_Controller
         if($result !== false){
         	// success
         	$row = $result->row_array();
-        	$this->response($row, 200); // 200 being the HTTP response code
+        	$this->response_success($row); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -165,11 +167,11 @@ class Account extends REST_Controller
         	if(isset($row['accountState'])){
         		$state = $row['accountState'];
         	}
-        	$this->response($state, 200); // 200 being the HTTP response code
+        	$this->response_success($state); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -184,11 +186,11 @@ class Account extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('account locked');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -203,11 +205,11 @@ class Account extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('account unlocked');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -221,11 +223,11 @@ class Account extends REST_Controller
     	
     	if($result !== false){
         	// success
-        	$this->response('success', 200); // 200 being the HTTP response code
+        	$this->response_success('account deleted'); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -241,11 +243,11 @@ class Account extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('password changed');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -261,11 +263,11 @@ class Account extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('emailed changed');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -283,11 +285,11 @@ class Account extends REST_Controller
         	if($result->num_rows() == 0){
         		$unique = 'yes';
         	}
-			$this->response(array('unique' => $unique), 200); // 200 being the HTTP response code
+			$this->response_success(array('unique' => $unique)); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -306,11 +308,11 @@ class Account extends REST_Controller
         	if(isset($row['id'])){
         		$id = $row['id'];
         	}
-        	$this->response($id, 200); // 200 being the HTTP response code
+        	$this->response_success($id); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -329,11 +331,11 @@ class Account extends REST_Controller
         	if(isset($row['isAdmin']) && $row['isAdmin'] == true){
         		$isAdmin = 'yes';
         	}
-        	$this->response(array('isAdmin' => $isAdmin), 200); // 200 being the HTTP response code
+        	$this->response_success(array('isAdmin' => $isAdmin)); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -348,11 +350,11 @@ class Account extends REST_Controller
 	    	foreach ($result->result_array() as $row){
 			   $all[] = $result->row_array();
 			}
-			$this->response($all, 200); // 200 being the HTTP response code
+			$this->response_success($all); // 200 being the HTTP response code
         	
         } else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
@@ -367,12 +369,31 @@ class Account extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response('success', 200);
+    		$this->response_success('account promoted');
     		
     	} else {
     		// failure
-    		$this->response(array('error' => 'DB Error: '.$this->db->_error_message()), 404);
+    		$this->response_error('DB Error: '.$this->db->_error_message());
     	}
 	}
 
+	function response_success($message)
+	{
+		$data = array(
+			'success' => true,
+			'error'   => false,
+			'result' => $message
+		);
+		$this->response($data, 200);
+	}
+	
+	function response_error($message)
+	{
+		$data = array(
+			'success' => false,
+			'error'   => true,
+			'result' => $message
+		);
+		$this->response($data, 404);
+	}
 }

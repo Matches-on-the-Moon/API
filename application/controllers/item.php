@@ -53,6 +53,7 @@ class Item extends REST_Controller
     		'ownerID' 	  => $this->put('ownerID'),
     		'name'		  => $this->put('name'),
     		'location'	  => $this->put('location'),
+    		'status'	  => 'OPEN',
     		'reward' 	  => $this->put('reward'),
     		'type'  	  => $this->put('type'),
     		'category'    => $this->put('category'),
@@ -63,7 +64,9 @@ class Item extends REST_Controller
     	
     	if($result){
     		// success
-    		$this->response_success('item created');
+    		// respond with id
+    		$id = $this->db->insert_id();
+    		$this->response_success($id);
     		
     	} else {
     		// failure
@@ -117,11 +120,9 @@ class Item extends REST_Controller
     	$id = $this->post('id');
     
     	$data = array(
-    		'ownerID' 	  => $this->post('ownerID'),
     		'name'		  => $this->post('name'),
     		'location'	  => $this->post('location'),
     		'reward' 	  => $this->post('reward'),
-    		'type'  	  => $this->post('type'),
     		'category'    => $this->post('category'),
     		'description' => $this->post('description')
     	);
@@ -164,12 +165,14 @@ class Item extends REST_Controller
     // get all itme matching this item
     function matches_get()
     {
+    	$id = $this->get('id');
     	$name = $this->get('name');
     	$location = $this->get('location');
     
     	$this->db->like('LOWER(name)', strtolower($name));
     	$this->db->like('LOWER(location)', strtolower($location));
-    	$this->db->limit(100);// just in case
+    	$this->db->where_not_in('id', array($id));
+    	$this->db->limit(20);// just in case
     	$result = $this->db->get('items');
     
     	if($result !== false){

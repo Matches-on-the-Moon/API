@@ -167,7 +167,7 @@ class Account extends REST_Controller
         	if(isset($row['accountState'])){
         		$state = $row['accountState'];
         	}
-        	$this->response_success($state); // 200 being the HTTP response code
+        	$this->response_success(array('state' => $state)); // 200 being the HTTP response code
         	
         } else {
     		// failure
@@ -214,16 +214,16 @@ class Account extends REST_Controller
 	}
 
 	// boolean deleteAccount(Integer accountID);
-	function index_delete()
+	function delete_post()
 	{
-		$id = $this->delete('id');
+		$id = $this->post('id');
     	
     	$this->db->where('id', $id);
     	$result = $this->db->delete('accounts');
     	
     	if($result !== false){
         	// success
-        	$this->response_success('account deleted'); // 200 being the HTTP response code
+        	$this->response_success('account id='.$id.' deleted'); // 200 being the HTTP response code
         	
         } else {
     		// failure
@@ -308,7 +308,7 @@ class Account extends REST_Controller
         	if(isset($row['id'])){
         		$id = $row['id'];
         	}
-        	$this->response_success($id); // 200 being the HTTP response code
+        	$this->response_success(array('id' => $id)); // 200 being the HTTP response code
         	
         } else {
     		// failure
@@ -348,7 +348,7 @@ class Account extends REST_Controller
         	// success
         	$all = array();
 	    	foreach ($result->result_array() as $row){
-			   $all[] = $result->row_array();
+			   $all[] = $row;
 			}
 			$this->response_success($all); // 200 being the HTTP response code
         	
